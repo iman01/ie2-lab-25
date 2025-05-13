@@ -1,0 +1,77 @@
+#include <iostream>
+#include <memory>
+#include <vector>
+
+using namespace std;
+
+class Vehicle {
+
+public:
+    virtual ~Vehicle() = default;
+    std::string name() { return name_; }
+    int number_of_wheels() { return number_of_wheels_; }
+    std::string propulsion_type() { return propulsion_type_; }
+    double max_speed() { return max_speed_; }
+
+    virtual bool has_abs() {return false;}
+    //for skoda_superb_as_vehicle->has_abs() to call method from drived class this virtual must be here
+
+protected:
+    Vehicle(const std::string &name, int number_of_wheels,
+            const std::string &propulsion_type, double max_speed)
+        : name_(name), number_of_wheels_(number_of_wheels),
+        propulsion_type_(propulsion_type), max_speed_(max_speed) {}
+
+
+
+    std::string name_;
+    int number_of_wheels_;
+    std::string propulsion_type_;
+    double max_speed_;
+};
+
+class Bike : public Vehicle {
+
+public:
+    Bike() : Vehicle("Bike", 2, "Muscles", 30) {}
+};
+
+class Car : public Vehicle {
+
+public:
+    Car(const std::string &name, const std::string &propulsion_type,
+        double max_speed, bool has_abs)
+        : Vehicle(name, 4, propulsion_type, max_speed),
+        has_abs_(has_abs) {}
+
+    bool has_abs() { return has_abs_; }
+
+private:
+    bool has_abs_;
+};
+
+int main()
+{
+    std::unique_ptr<Vehicle> skoda_superb_as_vehicle = std::make_unique<Car>(
+        "Skoda Superb", "Gasoline", 200, true);
+
+    Car *car = dynamic_cast<Car *>(skoda_superb_as_vehicle.get());
+
+    std::cout << "Name: " << skoda_superb_as_vehicle->name() << std::endl;
+    std::cout << "Has ABS: " << skoda_superb_as_vehicle->has_abs() << std::endl;   // this works through polymorphism
+    std::cout << "Has ABS: " << car->has_abs() << std::endl;    // this works through casting
+
+    std::vector<std::unique_ptr<Vehicle>> vehicles;
+    vehicles.emplace_back(std::make_unique<Car>("Skoda Superb", "Gasoline", 200, true));
+    vehicles.emplace_back(std::make_unique<Bike>());
+
+    for (auto &v : vehicles) {
+        Car *some_car = dynamic_cast<Car *>(v.get());
+        if (some_car != nullptr) { // cast successful
+            std::cout << v->name() << ": abs=" << some_car->has_abs() << std::endl;
+        } else { // nope
+            std::cout << v->name() << ": not a Car" << std::endl;
+        }
+    }
+    return 0;
+}
